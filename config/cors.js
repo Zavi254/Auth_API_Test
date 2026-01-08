@@ -14,10 +14,10 @@ function configureCors() {
                 callback(new Error("Not allowed by CORS"));
             }
         },
-        credentials: true,
+        credentials: false,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-        exposedHeaders: ["Set-Cookie"]
+        allowedHeaders: ["Content-Type", "Authorization"],
+        exposedHeaders: []
     });
 }
 
