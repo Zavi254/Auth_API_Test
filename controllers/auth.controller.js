@@ -121,8 +121,6 @@ export async function login(req, res) {
             }
         });
 
-        console.log("The user when the user hits the login endpoint:", user);
-
         // Check if user exists
         if (!user || user.accounts.length === 0) {
             return res.status(401).json({ message: "Invalid email or password" });
