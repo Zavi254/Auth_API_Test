@@ -13,11 +13,13 @@ app.use(configureCors());
 
 // Debug middleware to check response headers
 app.use((req, res, next) => {
-    const originalJson = res.json();
+    const originalJson = res.json.bind(res);
+
     res.json = function (data) {
         console.log("Response Headers:", res.getHeaders());
-        return originalJson.call(this, data);
+        return originalJson(data);
     }
+
     next();
 })
 
