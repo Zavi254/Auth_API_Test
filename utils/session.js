@@ -16,13 +16,16 @@ async function createSession(userId, req) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
-    const ipAddress = req.headers["x-forwarded-for"] || req.headers["x-real-ip"] || req.connection.remoteAddress || "unknown";
+    const ipAddress = req.headers["x-forwarded-for"]
+        || req.headers["x-real-ip"] ||
+        req.connection.remoteAddress || "unknown";
 
     const userAgent = req.headers["user-agent"] || "unknown";
 
     const session = await prisma.session.create({
         data: {
-            userId, token,
+            userId,
+            token,
             expiresAt,
             ipAddress,
             userAgent
@@ -36,13 +39,15 @@ async function createSession(userId, req) {
  * Set session cookie in response
  */
 function setSessionCookie(res, token) {
-    // const isProduction = process.env.NODE_ENV === "production";
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("session", token, {
         httpOnly: true,
         secure: true,
-        sameSite: "lax",
+        sameSite: isProduction ? "none" : "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        path: "/"
+        path: "/",
+        domain: isProduction ? undefined : undefined
     });
 }
 
@@ -50,11 +55,12 @@ function setSessionCookie(res, token) {
  * Clear session cookie
  */
 function clearSessionCookie(res) {
+    const isProduction = process.env.NODE_ENV === "production"
+
     res.cookie("session", "", {
         httpOnly: true,
-        // secure: process.env.NODE_ENV === "production",
         secure: true,
-        sameSite: "lax",
+        sameSite: isProduction ? "none" : "lax",
         maxAge: 0,
         path: "/"
     });
