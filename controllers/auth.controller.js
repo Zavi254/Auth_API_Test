@@ -36,8 +36,6 @@ export async function register(req, res) {
             });
         }
 
-
-
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -69,11 +67,9 @@ export async function register(req, res) {
         // Create session
         const session = await createSession(result.id, req);
 
-        // Set session cookie
-        setSessionCookie(res, session.token);
-
         return res.status(201).json({
             success: true,
+            token: session.token,
             user: {
                 id: result.id,
                 email: result.email,
@@ -120,22 +116,17 @@ export async function login(req, res) {
 
         // Get credential account
         const account = user.accounts[0];
+        const isValid = await bcrypt.compare(password, account.password);
 
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, account.password)
-
-        if (!isValidPassword) {
+        if (!isValid) {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        // Create new session
         const session = await createSession(user.id, req);
-
-        // Set session cookie
-        setSessionCookie(res, session.token);
 
         return res.status(200).json({
             success: true,
+            token: session.token,
             user: {
                 id: user.id,
                 email: user.email,
@@ -154,18 +145,18 @@ export async function login(req, res) {
 
 /**
  * GET /api/auth/session
- * Get current session
+ * Accept token from Authorization header or Cookie
  */
 export async function getSession(req, res) {
     try {
-        // Get session token from cookie
-        const sessionToken = getSessionToken(req);
+        // Try to get token from Authorization header first, then cookie
+        const authHeader = req.headers.authorization;
+        const sessionToken = authHeader?.replace('Bearer ', '') || getSessionToken(req);
 
         if (!sessionToken) {
             return res.status(401).json({ message: "No session found" });
         }
 
-        // Find session in database
         const session = await prisma.session.findUnique({
             where: { token: sessionToken },
             include: {
@@ -184,9 +175,7 @@ export async function getSession(req, res) {
 
         // Check if session is expired
         if (session.expiresAt < new Date()) {
-            // Delete expired session
             await prisma.session.delete({ where: { token: sessionToken } });
-
             return res.status(401).json({ message: "Session expired" });
         }
 
@@ -216,22 +205,16 @@ export async function getSession(req, res) {
  */
 export async function logout(req, res) {
     try {
-        // Get session token from cookie
-        const sessionToken = getSessionToken(req);
+        const authHeader = req.headers.authorization;
+        const sessionToken = authHeader?.replace('Bearer ', '') || getSessionToken(req);
 
         if (!sessionToken) {
             return res.status(400).json({ message: "No session found" });
         }
 
-        // Delete session from database
         await prisma.session.delete({
             where: { token: sessionToken }
-        }).catch(() => {
-            // Ignore errors if sessiond doesn't exist
-        });
-
-        // Clear session cookie
-        clearSessionCookie(res);
+        }).catch(() => { });
 
         return res.status(200).json({ success: true, message: "Logged out successfully" })
 
@@ -257,9 +240,7 @@ export async function verifyEmail(req, res) {
         const verification = await prisma.verification.findFirst({
             where: {
                 value: token,
-                expiresAt: {
-                    gt: new Date()
-                }
+                expiresAt: { gt: new Date() }
             }
         });
 
@@ -267,17 +248,13 @@ export async function verifyEmail(req, res) {
             return res.status(400).json({ message: "Invalid or expired verification token" });
         }
 
-        // Get email from identifier
         const email = verification.identifier;
 
         // Update user's emailVerified status
         await prisma.user.update({ where: { email }, data: { emailVerified: true } });
-
-        // Delete verification token
         await prisma.verification.delete({ where: { id: verification.id } });
 
         return res.status(200).json({ success: true, message: "Email verified successfully" });
-
     } catch (error) {
         console.error("Email verification error:", error);
         return res.status(500).json({ message: "Email verification failed" });
@@ -358,9 +335,7 @@ export async function resetPassword(req, res) {
         const verification = await prisma.verification.findFirst({
             where: {
                 value: token,
-                expiresAt: {
-                    gte: new Date()
-                }
+                expiresAt: { gte: new Date() }
             }
         });
 
@@ -394,12 +369,10 @@ export async function resetPassword(req, res) {
             data: { password: hashedPassword }
         });
 
-        // Delete reset token
         await prisma.verification.delete({ where: { id: verification.id } });
-
-        // Delete all existing sessions for security
         await prisma.session.deleteMany({ where: { userId: user.id } })
 
+        return res.status(200).json({ success: true, message: "Password reset successfully" });
 
     } catch (error) {
         console.error("Reset password error:", error);
