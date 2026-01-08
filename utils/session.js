@@ -9,7 +9,9 @@ function generateSessionToken() {
 }
 
 /**
- * Create a new session for a user
+ * Creates a new session for a user
+ * Returns session obect with token
+ * Token is sent in response body (not cookie)
  */
 async function createSession(userId, req) {
     const token = generateSessionToken();
@@ -35,42 +37,4 @@ async function createSession(userId, req) {
     return session;
 }
 
-/**
- * Set session cookie in response
- */
-function setSessionCookie(res, token) {
-    const isProduction = process.env.NODE_ENV === "production";
-
-    res.cookie("session", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: isProduction ? "none" : "lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        path: "/",
-        domain: isProduction ? undefined : undefined
-    });
-}
-
-/**
- * Clear session cookie
- */
-function clearSessionCookie(res) {
-    const isProduction = process.env.NODE_ENV === "production"
-
-    res.cookie("session", "", {
-        httpOnly: true,
-        secure: true,
-        sameSite: isProduction ? "none" : "lax",
-        maxAge: 0,
-        path: "/"
-    });
-}
-
-/**
- * Get session token from request
- */
-function getSessionToken(req) {
-    return req.cookies?.session || req.headers.cookie?.match(/session=([^;]+)/)?.[1];
-}
-
-export { generateSessionToken, createSession, setSessionCookie, clearSessionCookie, getSessionToken }
+export { generateSessionToken, createSession }

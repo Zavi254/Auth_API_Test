@@ -1,8 +1,20 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma.js";
-import { createSession, setSessionCookie, clearSessionCookie, getSessionToken } from "../utils/session.js";
+import { createSession } from "../utils/session.js";
 import { isValidEmail, isValidPassword } from "../utils/validation.js";
 import { generateToken } from "../utils/token.js";
+
+/**
+ * Extract token from Authorization header
+ * Format: "Bearer <token>"
+ */
+function getAuthToken(req) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        return authHeader.substring(7);
+    }
+    return null;
+}
 
 /**
  * POST /api/auth/register
@@ -149,12 +161,11 @@ export async function login(req, res) {
  */
 export async function getSession(req, res) {
     try {
-        // Try to get token from Authorization header first, then cookie
-        const authHeader = req.headers.authorization;
-        const sessionToken = authHeader?.replace('Bearer ', '') || getSessionToken(req);
+        // Get token from Authorization header
+        const sessionToken = getAuthToken(req);
 
         if (!sessionToken) {
-            return res.status(401).json({ message: "No session found" });
+            return res.status(401).json({ message: "No session token provided" });
         }
 
         const session = await prisma.session.findUnique({
@@ -205,8 +216,8 @@ export async function getSession(req, res) {
  */
 export async function logout(req, res) {
     try {
-        const authHeader = req.headers.authorization;
-        const sessionToken = authHeader?.replace('Bearer ', '') || getSessionToken(req);
+        // Get token from Authorization header
+        const sessionToken = getAuthToken(req);
 
         if (!sessionToken) {
             return res.status(400).json({ message: "No session found" });
