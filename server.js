@@ -12,16 +12,16 @@ app.use(express.json());
 app.use(configureCors());
 
 // Debug middleware to check response headers
-app.use((req, res, next) => {
-    const originalJson = res.json.bind(res);
+// app.use((req, res, next) => {
+//     const originalJson = res.json.bind(res);
 
-    res.json = function (data) {
-        console.log("Response Headers:", res.getHeaders());
-        return originalJson(data);
-    }
+//     res.json = function (data) {
+//         console.log("Response Headers:", res.getHeaders());
+//         return originalJson(data);
+//     }
 
-    next();
-})
+//     next();
+// })
 
 // Routes
 app.use("/api/auth", authRoutes);
