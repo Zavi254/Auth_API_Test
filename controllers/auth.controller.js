@@ -219,6 +219,8 @@ export async function logout(req, res) {
         // Get token from Authorization header
         const sessionToken = getAuthToken(req);
 
+        console.log("Logout Session Token:", sessionToken);
+
         if (!sessionToken) {
             return res.status(400).json({ message: "No session found" });
         }
