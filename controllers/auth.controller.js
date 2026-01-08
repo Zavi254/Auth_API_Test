@@ -121,6 +121,8 @@ export async function login(req, res) {
             }
         });
 
+        console.log("The user when the user hits the login endpoint:", user);
+
         // Check if user exists
         if (!user || user.accounts.length === 0) {
             return res.status(401).json({ message: "Invalid email or password" });
@@ -220,8 +222,6 @@ export async function logout(req, res) {
     try {
         // Get token from Authorization header
         const sessionToken = getAuthToken(req);
-
-        console.log("Logout Session Token:", sessionToken);
 
         if (!sessionToken) {
             return res.status(400).json({ message: "No session found" });
