@@ -31,8 +31,12 @@ export async function register(req, res) {
         const existingUser = await prisma.user.findUnique({ where: { email } });
 
         if (existingUser) {
-            return res.status(409).json({ message: "User with this email already exists" });
+            return res.status(400).json({
+                message: "Registration failed. Please check your details and try again."
+            });
         }
+
+
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
