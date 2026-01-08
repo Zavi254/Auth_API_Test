@@ -36,10 +36,10 @@ async function createSession(userId, req) {
  * Set session cookie in response
  */
 function setSessionCookie(res, token) {
-    const isProduction = process.env.NODE_ENV === "production";
+    // const isProduction = process.env.NODE_ENV === "production";
     res.cookie("session", token, {
         httpOnly: true,
-        secure: isProduction,
+        secure: true,
         sameSite: "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: "/"
@@ -52,7 +52,8 @@ function setSessionCookie(res, token) {
 function clearSessionCookie(res) {
     res.cookie("session", "", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        // secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "lax",
         maxAge: 0,
         path: "/"
