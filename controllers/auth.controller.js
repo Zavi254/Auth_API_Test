@@ -212,8 +212,6 @@ export async function getSession(req, res) {
         // Extract plan name
         const planName = sessionData.user?.profile?.subscriptions?.[0]?.plan_name || null;
 
-        console.log(sessionData);
-
         // Return user data with only plan_name
         return res.status(200).json({
             user: {
