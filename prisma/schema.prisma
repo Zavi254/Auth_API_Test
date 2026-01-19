@@ -32,9 +32,37 @@ model Profile {
   org_name           String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  subscriptions      Subscription[]
   users              User[]   @relation("UserProfile")
 
   @@index([userType])
+}
+
+model Subscription {
+  id                       String             @id @default(cuid())
+  profile_id               String
+  stripe_subscription_id   String?            @unique
+  plan_name                PlanName
+  status                   SubscriptionStatus
+  start_date               DateTime?
+  trial_end                DateTime?
+  current_period_end       DateTime?
+  cancel_at                DateTime?
+  cancel_at_period_end     Boolean            @default(false)
+  billing_interval         BillingInterval?
+  no_of_licenses           Int                @default(1)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  last_3day_reminder_sent  DateTime?
+  last_1day_reminder_sent  DateTime?
+  pending_billing_interval BillingInterval?
+  pending_seats            Int?
+  profile                  Profile            @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+
+  @@index([profile_id])
+  @@index([status])
+  @@index([current_period_end])
+  @@index([plan_name])
 }
 
 model Account {
@@ -91,4 +119,25 @@ enum Role {
 enum UserType {
   INDIVIDUAL
   ORGANIZATION
+}
+
+enum PlanName {
+  FREE_ESIGN @map("Free eSign")
+  ESIGN      @map("eSign")
+  EDMS_PLUS  @map("EDMS+")
+}
+
+enum BillingInterval{
+  month
+  year
+}
+
+enum SubscriptionStatus {
+  incomplete
+  incomplete_expired
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
 }
