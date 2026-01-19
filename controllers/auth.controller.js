@@ -164,8 +164,6 @@ export async function getSession(req, res) {
         // Get token from Authorization header
         const sessionToken = getAuthToken(req);
 
-        console.log("Get Session:", sessionToken);
-
         if (!sessionToken) {
             return res.status(401).json({ message: "No session token provided" });
         }
@@ -211,7 +209,6 @@ export async function getSession(req, res) {
 
         // Extract plan name
         const planName = sessionData.user?.profile?.subscriptions?.[0]?.plan_name || null;
-
         // Return user data with only plan_name
         return res.status(200).json({
             user: {
