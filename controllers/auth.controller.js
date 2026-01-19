@@ -170,39 +170,62 @@ export async function getSession(req, res) {
             return res.status(401).json({ message: "No session token provided" });
         }
 
-        const session = await prisma.session.findUnique({
+        const sessionData = await prisma.session.findUnique({
             where: { token: sessionToken },
             include: {
                 user: {
                     include: {
-                        profile: true
+                        profile: {
+                            include: {
+                                subscriptions: {
+                                    where: {
+                                        status: {
+                                            in: ["active", "trialing"]
+                                        }
+                                    },
+                                    select: {
+                                        plan_name: true
+                                    },
+                                    orderBy: {
+                                        createdAt: "desc"
+                                    },
+                                    take: 1
+                                }
+                            }
+                        }
                     }
                 }
             }
         });
 
         // Check if session exists
-        if (!session) {
+        if (!sessionData) {
             return res.status(401).json({ message: "Invalid session" });
         }
 
         // Check if session is expired
-        if (session.expiresAt < new Date()) {
+        if (sessionData.expiresAt < new Date()) {
             await prisma.session.delete({ where: { token: sessionToken } });
             return res.status(401).json({ message: "Session expired" });
         }
 
-        // Return user data
+        // Extract plan name
+        const planName = sessionData.user?.profile?.subscriptions?.[0]?.plan_name || null;
+
+        console.log(sessionData);
+
+        // Return user data with only plan_name
         return res.status(200).json({
             user: {
-                id: session.user.id,
-                email: session.user.email,
-                name: session.user.name,
-                emailVerified: session.user.emailVerified,
-                profile_id: session.user.profile_id,
-                profile: session.user.profile,
-                role: session.user.role,
-                image: session.user.image
+                id: sessionData.user.id,
+                email: sessionData.user.email,
+                name: sessionData.user.name,
+                emailVerified: sessionData.user.emailVerified,
+                profile_id: sessionData.user.profile_id,
+                profile: sessionData.user.profile,
+                role: sessionData.user.role,
+                image: sessionData.user.image,
+                plan_name: planName
             }
         });
 
