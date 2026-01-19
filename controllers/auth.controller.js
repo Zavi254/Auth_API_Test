@@ -223,7 +223,6 @@ export async function getSession(req, res) {
                 emailVerified: sessionData.user.emailVerified,
                 profile_id: sessionData.user.profile_id,
                 profile: sessionData.user.profile,
-                role: sessionData.user.role,
                 image: sessionData.user.image,
                 plan_name: planName
             }
